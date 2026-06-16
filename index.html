@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer & ATS Optimizer</title>
+    
+    <!-- Meta tags for SEO -->
+    <meta name="description" content="Audit and supercharge your resume for Applicant Tracking Systems (ATS) instantly. Free, secure, client-side NLP analysis with optional Gemini AI integration.">
+    <meta name="keywords" content="Resume Analyzer, ATS checker, resume feedback, keyword optimization, Gemini API, resume tailor">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- PDF.js library via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Main Premium Header -->
+        <header class="main-header" id="app-header">
+            <div class="logo-group">
+                <div class="logo-icon">
+                    <!-- Custom SVG Logo -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: white;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                </div>
+                <div class="logo-text">Resu<span>Glow</span></div>
+            </div>
+            
+            <div class="header-actions">
+                <button class="api-badge-toggle" id="api-toggle-btn" aria-label="Toggle Advanced Gemini AI Settings">
+                    <i data-lucide="sparkles"></i>
+                    <span>Configure Gemini AI</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Gemini API Key Panel -->
+        <section class="glass-panel api-config-panel" id="api-config-panel">
+            <div class="form-group">
+                <label for="gemini-key-input">Enter Gemini API Key (Direct Connection, Privacy First)</label>
+                <div class="input-row">
+                    <input type="password" id="gemini-key-input" class="text-input" placeholder="Paste your AIzaSy... API key here">
+                    <button class="btn-primary" id="save-api-btn">
+                        <i data-lucide="check"></i> Save Key
+                    </button>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    Your key is saved locally in your browser cache and is sent directly to Google APIs. Your data never leaves your device.
+                </p>
+            </div>
+        </section>
+
+        <main id="main-content">
+            
+            <!-- Setup & Upload Screen (Default) -->
+            <section class="setup-screen" id="setup-screen">
+                <div class="hero-text">
+                    <h2>Supercharge Your Resume For ATS</h2>
+                    <p>Unlock recruiter-approved impact scores, identify missing high-value keywords, and optimize your bullet points with advanced client-side AI analysis.</p>
+                </div>
+
+                <div class="upload-grid">
+                    <!-- Left: Upload zone -->
+                    <div class="glass-panel dropzone-container" id="drop-zone">
+                        <div class="upload-icon-wrapper">
+                            <i data-lucide="cloud-upload" style="width: 2.25rem; height: 2.25rem;"></i>
+                        </div>
+                        <div class="upload-text">
+                            <h4>Drag & drop your resume</h4>
+                            <p>Supports PDF, TXT, PNG, JPG, JPEG, WEBP (Max 10MB)</p>
+                        </div>
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">or</span>
+                        <input type="file" id="file-input" accept=".pdf,.txt,.png,.jpg,.jpeg,.webp" style="display: none;">
+                        <button class="btn-secondary" id="browse-btn">
+                            <i data-lucide="folder-open"></i> Browse Files
+                        </button>
+                        
+                        <!-- Selected File Confirmation Card -->
+                        <div class="selected-file-card" id="selected-file-card">
+                            <div class="file-info">
+                                <span class="file-icon"><i data-lucide="file-text"></i></span>
+                                <div class="file-details">
+                                    <h5 id="file-name">resume.pdf</h5>
+                                    <p id="file-size">1.2 MB</p>
+                                </div>
+                            </div>
+                            <button class="remove-file-btn" id="remove-file-btn" aria-label="Remove uploaded file">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Job Description -->
+                    <div class="glass-panel job-description-panel">
+                        <div class="panel-heading-group">
+                            <h3 style="font-size: 1.15rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="briefcase" style="color: var(--accent-indigo); width: 1.15rem; height: 1.15rem;"></i>
+                                Target Job Description (Optional)
+                            </h3>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Paste the job description to match target keywords and calculate exact alignment scores.</p>
+                        </div>
+                        <textarea id="jd-textarea" placeholder="Paste the full job posting details here..."></textarea>
+                    </div>
+                </div>
+
+                <div class="submit-container">
+                    <button class="btn-primary btn-analyze" id="analyze-btn" disabled>
+                        <i data-lucide="bar-chart-2"></i> Analyze Resume
+                    </button>
+                </div>
+            </section>
+
+            <!-- Loading Overlay -->
+            <section class="loading-overlay" id="loading-overlay">
+                <div class="spinner-wrapper">
+                    <div class="spinner-outer"></div>
+                    <div class="spinner-inner"></div>
+                    <div class="spinner-core"></div>
+                </div>
+                <div class="loading-text">
+                    <h3 id="loading-title">Parsing Resume...</h3>
+                    <p id="loading-subtitle">Running structural checklist & keyword counts</p>
+                </div>
+            </section>
+
+            <!-- Dashboard Screen (Shown after analysis) -->
+            <section class="dashboard-screen" id="dashboard-screen">
+                <!-- Sidebar Nav Panel -->
+                <aside class="glass-panel dashboard-sidebar">
+                    <nav class="sidebar-nav" aria-label="Dashboard Navigation">
+                        <ul class="sidebar-nav-list">
+                            <li>
+                                <button class="nav-item-btn active" data-tab="tab-ats">
+                                    <i data-lucide="layout-dashboard"></i>
+                                    <span>ATS Score Audit</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button class="nav-item-btn" data-tab="tab-keywords">
+                                    <i data-lucide="key"></i>
+                                    <span>Keyword Matcher</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button class="nav-item-btn" data-tab="tab-tailor">
+                                    <i data-lucide="sparkles"></i>
+                                    <span>AI Bullet Tailor</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button class="nav-item-btn" data-tab="tab-interview">
+                                    <i data-lucide="message-square"></i>
+                                    <span>Interview Prep</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    <div class="sidebar-footer">
+                        <button class="btn-primary" id="reupload-btn" style="width: 100%;">
+                            <i data-lucide="refresh-cw"></i> Upload New
+                        </button>
+                        <button class="btn-secondary" id="export-report-btn" style="width: 100%;">
+                            <i data-lucide="download"></i> Download Report
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Main Analysis Contents -->
+                <div class="dashboard-content-area" style="flex: 1; display: flex; flex-direction: column; gap: 2rem;">
+                    
+                    <!-- TAB 1: ATS SCORE AUDIT -->
+                    <div class="tab-content active" id="tab-ats">
+                        <!-- Executive Summary -->
+                        <div class="glass-panel summary-card">
+                            <h3>Executive Audit Summary</h3>
+                            <p id="summary-text">Your resume features robust phrasing and a solid visual checklist. We've matched keywords, reviewed layout structure, scanned action verbs, and highlighted critical revisions below.</p>
+                        </div>
+
+                        <!-- Key Metrics Row -->
+                        <div class="metrics-grid">
+                            <!-- Metric 1: Overall ATS Score -->
+                            <div class="glass-panel metric-panel">
+                                <div class="radial-progress-wrapper">
+                                    <svg class="radial-svg" viewBox="0 0 130 130">
+                                        <circle class="radial-bg" cx="65" cy="65" r="60"></circle>
+                                        <circle class="radial-fill" id="ats-radial-fill" cx="65" cy="65" r="60"></circle>
+                                    </svg>
+                                    <div class="radial-text">
+                                        <div class="radial-number" id="ats-score-num">0%</div>
+                                        <div class="radial-label">Match</div>
+                                    </div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="metric-subtitle">ATS Compatibility</div>
+                                    <span class="metric-description" id="ats-score-rating">Processing...</span>
+                                </div>
+                            </div>
+
+                            <!-- Metric 2: Readability Grade -->
+                            <div class="glass-panel metric-panel">
+                                <div class="metric-value-wrapper">
+                                    <div class="metric-number" id="readability-num">0</div>
+                                    <div class="metric-subtitle" id="readability-grade">Standard</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="metric-subtitle">Readability Score</div>
+                                    <span class="metric-description">Flesch-Kincaid Index</span>
+                                </div>
+                            </div>
+
+                            <!-- Metric 3: Active Verbs Count -->
+                            <div class="glass-panel metric-panel">
+                                <div class="metric-value-wrapper">
+                                    <div class="metric-number" id="active-verbs-num">0</div>
+                                    <div class="metric-subtitle" id="active-verbs-density">0%</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="metric-subtitle">Action Verb Count</div>
+                                    <span class="metric-description">High-impact verbs count</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Structural Checklist & Dynamic Feedback -->
+                        <div class="section-grid">
+                            <!-- Dynamic Bullet Audit List -->
+                            <div class="glass-panel" style="display: flex; flex-direction: column;">
+                                <div class="panel-header">
+                                    <h4>
+                                        <i data-lucide="alert-circle" style="color: var(--accent-indigo); width: 1.15rem; height: 1.15rem;"></i>
+                                        Detailed Feedback Suggestions
+                                    </h4>
+                                    <span id="feedback-badge" class="question-category" style="background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border-color: rgba(244, 63, 94, 0.25);">0 issues</span>
+                                </div>
+                                <div class="panel-body" style="flex: 1;">
+                                    <div class="audit-list" id="feedback-audit-list">
+                                        <!-- Javascript Populated -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Structural Layout Check -->
+                            <div class="glass-panel" style="display: flex; flex-direction: column;">
+                                <div class="panel-header">
+                                    <h4>
+                                        <i data-lucide="check-square" style="color: var(--accent-indigo); width: 1.15rem; height: 1.15rem;"></i>
+                                        Resume Checklist
+                                    </h4>
+                                </div>
+                                <div class="panel-body">
+                                    <div id="checklist-container">
+                                        <!-- Dynamic Checklist Items -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: KEYWORD MATCHER -->
+                    <div class="tab-content" id="tab-keywords">
+                        <div class="keyword-sections-grid">
+                            <!-- Missing Keywords Panel -->
+                            <div class="glass-panel">
+                                <div class="panel-header" style="border-bottom-color: rgba(244, 63, 94, 0.15);">
+                                    <h4 style="color: #fecdd3;">
+                                        <i data-lucide="alert-octagon" style="color: var(--accent-rose); width: 1.15rem; height: 1.15rem;"></i>
+                                        Missing High-Value Keywords
+                                    </h4>
+                                </div>
+                                <div class="panel-body">
+                                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                                        ATS systems evaluate candidate alignment based on key skills found in the job description. Consider incorporating these missing terms naturally:
+                                    </p>
+                                    <div class="keyword-pill-group" id="missing-keywords-group">
+                                        <!-- Javascript Populated -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Matched Keywords Panel -->
+                            <div class="glass-panel">
+                                <div class="panel-header" style="border-bottom-color: rgba(16, 185, 129, 0.15);">
+                                    <h4 style="color: #a7f3d0;">
+                                        <i data-lucide="check-circle-2" style="color: var(--accent-emerald); width: 1.15rem; height: 1.15rem;"></i>
+                                        Successfully Matched Keywords
+                                    </h4>
+                                </div>
+                                <div class="panel-body">
+                                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                                        Great job! These job description keywords were found in your resume, supporting your application alignment:
+                                    </p>
+                                    <div class="keyword-pill-group" id="matched-keywords-group">
+                                        <!-- Javascript Populated -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: AI BULLET TAILOR -->
+                    <div class="tab-content" id="tab-tailor">
+                        <div class="glass-panel" style="padding: 1.5rem 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                                <div>
+                                    <h3 style="font-size: 1.25rem; color: white;">Google XYZ Bullet Point Optimizer</h3>
+                                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                        ATS and elite recruiters love bullet points structured around outcomes: <strong>Accomplished [X], measured by [Y], by doing [Z].</strong>
+                                    </p>
+                                </div>
+                                <div id="gemini-tailor-indicator" class="api-badge-toggle" style="pointer-events: none; border-color: rgba(255, 255, 255, 0.05);">
+                                    <i data-lucide="sparkles" style="color: var(--accent-indigo);"></i>
+                                    <span id="tailor-badge-text">Heuristic Optimization</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tailor-bullet-grid" id="tailor-bullet-grid">
+                            <!-- Javascript Populated comparative cards -->
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: INTERVIEW PREP -->
+                    <div class="tab-content" id="tab-interview">
+                        <div class="glass-panel" style="padding: 1.5rem 2rem; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1.25rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="help-circle" style="color: var(--accent-indigo); width: 1.25rem; height: 1.25rem;"></i>
+                                Custom Mock Interview Questions
+                            </h3>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                Prepare for interviews with high-probability questions structured around your unique experiences and target role specifications.
+                            </p>
+                        </div>
+
+                        <div class="interview-grid" id="interview-grid">
+                            <!-- Javascript Populated -->
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Script tags linked sequentially -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="pdf-helper.js"></script>
+    <script src="local-analyzer.js"></script>
+    <script src="gemini-service.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
