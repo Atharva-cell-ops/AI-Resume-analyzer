@@ -21,13 +21,13 @@ export default defineConfig({
   webServer: [
     {
       command: 'npm run dev:server',
-      port: 5000,
+      url: 'http://localhost:5000/api/health',
       reuseExistingServer: true,
       timeout: 120000
     },
     {
       command: 'npm run dev:client',
-      port: 5173,
+      url: 'http://localhost:5173',
       reuseExistingServer: true,
       timeout: 120000
     }
