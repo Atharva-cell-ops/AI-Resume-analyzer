@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  passwordHash    String
+  name            String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  resumes         Resume[]
+  refreshTokens   RefreshToken[]
+  jobDescriptions JobDescription[]
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Resume {
+  id             String          @id @default(uuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  templateId     String          @default("ats-classic")
+  currentVersion Int             @default(1)
+  content        Json            // Holds structured ResumeData JSON
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  versions       ResumeVersion[]
+  atsReports     AtsReport[]
+
+  @@index([userId])
+}
+
+model ResumeVersion {
+  id            String   @id @default(uuid())
+  resumeId      String
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  changeSummary String?
+  content       Json     // Snapshot of ResumeData
+  createdAt     DateTime @default(now())
+
+  @@unique([resumeId, versionNumber])
+  @@index([resumeId])
+}
+
+model JobDescription {
+  id                String      @id @default(uuid())
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title             String?
+  company           String?
+  rawText           String
+  extractedKeywords Json?
+  createdAt         DateTime    @default(now())
+  atsReports        AtsReport[]
+
+  @@index([userId])
+}
+
+model AtsReport {
+  id               String          @id @default(uuid())
+  resumeId         String
+  resume           Resume          @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobDescriptionId String?
+  jobDescription   JobDescription? @relation(fields: [jobDescriptionId], references: [id], onDelete: SetNull)
+  overallScore     Int
+  breakdown        Json
+  matchedKeywords  Json
+  missingKeywords  Json
+  actionableTips   Json
+  createdAt        DateTime        @default(now())
+
+  @@index([resumeId])
+  @@index([jobDescriptionId])
+}
+

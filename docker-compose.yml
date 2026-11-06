@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ats_resume_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: resume_analyzer
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d resume_analyzer"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ats_network
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: ats_resume_server
+    restart: unless-stopped
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/resume_analyzer?schema=public"
+      CLIENT_URL: "http://localhost:80"
+      JWT_ACCESS_SECRET: "production_super_secret_access_jwt_key_at_least_32_chars"
+      JWT_REFRESH_SECRET: "production_super_secret_refresh_jwt_key_at_least_32_chars"
+      JWT_ACCESS_EXPIRES_IN: "15m"
+      JWT_REFRESH_EXPIRES_IN: "7d"
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ats_network
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: ats_resume_client
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    networks:
+      - ats_network
+
+volumes:
+  postgres_data:
+
+networks:
+  ats_network:
+    driver: bridge
