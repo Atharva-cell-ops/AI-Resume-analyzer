@@ -8,18 +8,18 @@ import { ApiResponse, AuthResponse, UserProfile } from '@ai-resume/shared';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Cookie options
+// Cookie options (sameSite: 'none' and secure: true are required for cross-domain Vercel <-> Render cookies)
 const ACCESS_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: isProduction,
-  sameSite: (isProduction ? 'strict' : 'lax') as 'strict' | 'lax',
+  sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
   maxAge: 15 * 60 * 1000 // 15 minutes
 };
 
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: isProduction,
-  sameSite: (isProduction ? 'strict' : 'lax') as 'strict' | 'lax',
+  sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 

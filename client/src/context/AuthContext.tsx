@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserProfile, LoginInput, RegisterInput } from '@ai-resume/shared';
-import { apiFetch } from '../services/api';
+import { apiFetch, setStoredToken } from '../services/api';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -64,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await apiFetch('/auth/logout', { method: 'POST' });
     } finally {
+      setStoredToken(null);
       setUser(null);
     }
   };

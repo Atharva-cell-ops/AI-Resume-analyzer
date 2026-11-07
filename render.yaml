@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: resuglow-backend
+    name: ats-resume-studio-api
     runtime: node
     plan: free
     buildCommand: npm ci && npm run db:generate --workspace=server && npm run build --workspace=shared && npm run build --workspace=server

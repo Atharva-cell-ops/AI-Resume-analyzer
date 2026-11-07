@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useResume } from '../context/ResumeContext';
 import { AtsAnalysisResult, KeywordMatch, AtsSuggestion } from '@ai-resume/shared';
+import { API_BASE, getStoredToken } from '../services/api';
 import {
   Sparkles,
   UploadCloud,
@@ -60,18 +61,29 @@ export const AtsAnalyzerPage: React.FC = () => {
           return;
         }
 
+        const token = getStoredToken();
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
         const formData = new FormData();
         formData.append('resume', uploadedFile);
         formData.append('jobDescription', jobDescription);
 
-        response = await fetch('/api/ats/upload-and-analyze', {
+        response = await fetch(`${API_BASE}/ats/upload-and-analyze`, {
           method: 'POST',
+          headers,
+          credentials: 'include',
           body: formData
         });
       } else {
-        response = await fetch('/api/ats/analyze', {
+        const token = getStoredToken();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        response = await fetch(`${API_BASE}/ats/analyze`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
+          credentials: 'include',
           body: JSON.stringify({
             jobDescription,
             resumeContent: resumeData

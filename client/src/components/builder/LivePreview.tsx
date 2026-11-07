@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useResume } from '../../context/ResumeContext';
 import { ResumeRenderer } from '../templates/ResumeRenderer';
 import { TemplateId } from '@ai-resume/shared';
+import { API_BASE, getStoredToken } from '../../services/api';
 import {
   ShieldCheck,
   ZoomIn,
@@ -32,16 +33,21 @@ export const LivePreview: React.FC = () => {
       else setIsExportingDocx(true);
       setExportSuccess(null);
 
-      const endpoint = format === 'pdf' ? '/api/export/pdf' : '/api/export/docx';
+      const endpoint = `${API_BASE}/export/${format}`;
       const payload = {
         resumeId: activeResumeId || undefined,
         content: resumeData,
         templateId
       };
 
+      const token = getStoredToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
 
