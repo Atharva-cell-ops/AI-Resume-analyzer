@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://your-backend-service.onrender.com/api/$1"
+      "destination": "https://ai-resume-analyzer-lvyu.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
