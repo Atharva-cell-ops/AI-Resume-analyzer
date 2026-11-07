@@ -9,10 +9,10 @@ import {
   Lock,
   Mail,
   User as UserIcon,
-  Loader2,
-  ExternalLink,
-  Key
+  Loader2
 } from 'lucide-react';
+
+const GOOGLE_CLIENT_ID = '1015016366592-aba8gm5719m5s3hkvnsbofq1oe366e3o.apps.googleusercontent.com';
 
 export const WelcomeAuthPage: React.FC = () => {
   const { login, register, loginWithGoogle } = useAuth();
@@ -23,75 +23,69 @@ export const WelcomeAuthPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Google OAuth State
-  const [googleClientId, setGoogleClientId] = useState(
-    () => localStorage.getItem('google_oauth_client_id') || import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
-  );
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [tempClientId, setTempClientId] = useState('');
   const googleBtnRef = useRef<HTMLDivElement>(null);
 
-  // Initialize official Google Identity Services
+  // Initialize official Google Identity Services with user's client ID
   useEffect(() => {
-    const google = (window as any).google;
-    if (!googleClientId || !google?.accounts?.id) return;
+    let checkInterval: any;
 
-    try {
-      google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: async (response: any) => {
-          if (response.credential) {
-            setIsSubmitting(true);
-            setError(null);
-            try {
-              await loginWithGoogle(response.credential);
-            } catch (err: any) {
-              setError(err.message || 'Google authentication failed');
-            } finally {
-              setIsSubmitting(false);
+    const initGsi = () => {
+      const google = (window as any).google;
+      if (!google?.accounts?.id) return false;
+
+      try {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response: any) => {
+            if (response.credential) {
+              setIsSubmitting(true);
+              setError(null);
+              try {
+                await loginWithGoogle(response.credential);
+              } catch (err: any) {
+                setError(err.message || 'Google authentication failed');
+              } finally {
+                setIsSubmitting(false);
+              }
             }
           }
-        }
-      });
-
-      if (googleBtnRef.current) {
-        googleBtnRef.current.innerHTML = '';
-        google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'outline',
-          size: 'large',
-          type: 'standard',
-          shape: 'rectangular',
-          text: 'continue_with',
-          logo_alignment: 'center',
-          width: 380
         });
+
+        if (googleBtnRef.current) {
+          googleBtnRef.current.innerHTML = '';
+          google.accounts.id.renderButton(googleBtnRef.current, {
+            theme: 'outline',
+            size: 'large',
+            type: 'standard',
+            shape: 'rectangular',
+            text: 'continue_with',
+            logo_alignment: 'left',
+            width: googleBtnRef.current.offsetWidth || 340
+          });
+        }
+        return true;
+      } catch (e) {
+        console.warn('GSI init notice:', e);
+        return false;
       }
-    } catch (e) {
-      console.warn('Google Identity Services initialization notice:', e);
+    };
+
+    if (!initGsi()) {
+      checkInterval = setInterval(() => {
+        if (initGsi()) clearInterval(checkInterval);
+      }, 300);
     }
-  }, [googleClientId, loginWithGoogle]);
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+    };
+  }, [loginWithGoogle]);
 
   const handleGoogleClick = () => {
-    if (!googleClientId) {
-      setShowConfigModal(true);
-      return;
-    }
-
     const google = (window as any).google;
     if (google?.accounts?.id) {
       google.accounts.id.prompt();
-    } else {
-      setShowConfigModal(true);
     }
-  };
-
-  const handleSaveGoogleClientId = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tempClientId.trim()) return;
-    const cleanId = tempClientId.trim();
-    localStorage.setItem('google_oauth_client_id', cleanId);
-    setGoogleClientId(cleanId);
-    setShowConfigModal(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -232,47 +226,10 @@ export const WelcomeAuthPage: React.FC = () => {
             </div>
           )}
 
-          {/* Google Identity Services Integration */}
-          {googleClientId ? (
-            <div className="mb-4">
-              <div ref={googleBtnRef} className="flex justify-center w-full min-h-[44px]" />
-              <div className="text-center mt-1.5">
-                <button
-                  type="button"
-                  onClick={() => setShowConfigModal(true)}
-                  className="text-[10px] text-slate-400 hover:text-slate-600 underline"
-                >
-                  Change Google Client ID
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleGoogleClick}
-              className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 shadow-2xs flex items-center justify-center gap-3 transition mb-4"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-          )}
+          {/* Official Google Identity Services Sign-In Button */}
+          <div className="mb-4">
+            <div ref={googleBtnRef} className="flex justify-center w-full min-h-[44px]" />
+          </div>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-4">
@@ -360,91 +317,6 @@ export const WelcomeAuthPage: React.FC = () => {
       <footer className="border-t border-slate-200 bg-white py-4 px-6 text-center text-xs text-slate-500">
         <span>ATS Resume Studio &bull; Full-Stack Production Architecture &bull; 100% Deterministic ATS Engine</span>
       </footer>
-
-      {/* Google Identity Services Setup Modal */}
-      {showConfigModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-6 text-center relative animate-scaleIn">
-            <button
-              type="button"
-              onClick={() => setShowConfigModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-slate-100"
-            >
-              ✕
-            </button>
-
-            <div className="w-12 h-12 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-3 shadow-2xs">
-              <svg className="w-6 h-6" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-            </div>
-
-            <h3 className="text-base font-bold text-slate-900 mb-1">Official Google OAuth Sign-In</h3>
-            <p className="text-xs text-slate-500 mb-4 text-left leading-relaxed">
-              To trigger the official Google account picker popup, Google requires an authorized <strong>Google Client ID</strong> for your project.
-            </p>
-
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-left mb-4 text-xs space-y-1.5 text-slate-600">
-              <p className="font-semibold text-slate-800">How to get your free Client ID (1 minute):</p>
-              <ol className="list-decimal list-inside space-y-1 text-[11px]">
-                <li>Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-indigo-600 underline font-medium inline-flex items-center gap-0.5">Google Cloud Credentials <ExternalLink className="w-2.5 h-2.5 inline" /></a></li>
-                <li>Click <strong>Create Credentials &rarr; OAuth Client ID</strong></li>
-                <li>Choose <strong>Web application</strong> and add your site URL to Authorized JavaScript Origins</li>
-                <li>Copy the Client ID and paste it below:</li>
-              </ol>
-            </div>
-
-            <form onSubmit={handleSaveGoogleClientId} className="space-y-3 text-left">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Google Client ID
-                </label>
-                <div className="relative">
-                  <Key className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    required
-                    value={tempClientId}
-                    onChange={(e) => setTempClientId(e.target.value)}
-                    placeholder="e.g. 123456789-xxx.apps.googleusercontent.com"
-                    className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition shadow-xs mt-2"
-              >
-                Connect &amp; Activate Google Button
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowConfigModal(false)}
-                className="w-full py-2 text-xs text-slate-500 hover:text-slate-800 font-medium transition text-center"
-              >
-                Or use email &amp; password sign-in instead
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
