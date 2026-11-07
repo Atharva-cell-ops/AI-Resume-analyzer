@@ -1,8 +1,10 @@
 import { ApiResponse } from '@ai-resume/shared';
 
-// Support production VITE_API_URL or fall back to /api proxy
-const rawApiUrl = import.meta.env.VITE_API_URL || '';
-export const API_BASE = rawApiUrl.replace(/\/+$/, '') + '/api';
+// Support production VITE_API_URL or fall back directly to production Render backend
+const rawApiUrl =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? 'https://ai-resume-analyzer-lvyu.onrender.com' : '');
+export const API_BASE = (rawApiUrl ? rawApiUrl.replace(/\/+$/, '') : '') + '/api';
 
 export function getStoredToken(): string | null {
   try {
@@ -46,15 +48,25 @@ export async function apiFetch<T>(
     credentials: 'include' // include cookies
   });
 
-  const data = await response.json();
+  const rawText = await response.text();
+  let data: any = {};
+  try {
+    data = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    if (!response.ok) {
+      throw new Error(`Server returned status ${response.status}. Please check your backend connection.`);
+    }
+    throw new Error('Received unexpected non-JSON response from server.');
+  }
 
   // If the response returned an access token, persist it
   if (data?.data?.accessToken) {
     setStoredToken(data.data.accessToken);
   }
 
-  if (!response.ok && !data.error) {
-    throw new Error(`Request failed with status ${response.status}`);
+  if (!response.ok) {
+    const errorMsg = data?.error?.message || data?.message || `Request failed with status ${response.status}`;
+    throw new Error(errorMsg);
   }
 
   return data;
