@@ -5,19 +5,14 @@ import {
   ShieldCheck,
   Zap,
   TrendingUp,
-  ArrowRight,
   AlertCircle,
-  Sparkles,
   Lock,
   Mail,
-  User as UserIcon
+  User as UserIcon,
+  Loader2
 } from 'lucide-react';
 
-interface WelcomeAuthPageProps {
-  onContinueAsGuest: () => void;
-}
-
-export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGuest }) => {
+export const WelcomeAuthPage: React.FC = () => {
   const { login, register } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [name, setName] = useState('');
@@ -25,8 +20,12 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Google Sign-in Dialog State
   const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [googleCustomEmail, setGoogleCustomEmail] = useState('');
+  const [googleEmail, setGoogleEmail] = useState('');
+  const [googleName, setGoogleName] = useState('');
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,12 +34,12 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
 
     try {
       if (mode === 'login') {
-        await login({ email, password });
+        await login({ email: email.trim().toLowerCase(), password });
       } else {
         if (!name.trim()) {
           throw new Error('Please enter your full name');
         }
-        await register({ name, email, password });
+        await register({ name: name.trim(), email: email.trim().toLowerCase(), password });
       }
     } catch (err: any) {
       setError(err.message || 'Authentication failed. Please check your credentials.');
@@ -49,37 +48,41 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
     }
   };
 
-  const handleGoogleAuthProceed = async (targetEmail: string) => {
-    if (!targetEmail || !targetEmail.includes('@')) {
-      setError('Please provide a valid Google email address');
+  const handleGoogleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGoogleError(null);
+
+    const cleanEmail = googleEmail.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setGoogleError('Please enter a valid Google email address');
       return;
     }
-    const cleanPrefix = targetEmail.split('@')[0].replace(/[._]/g, ' ');
-    const formattedName = cleanPrefix
+
+    const resolvedName = googleName.trim() || cleanEmail.split('@')[0].replace(/[._]/g, ' ');
+    const formattedName = resolvedName
       .split(' ')
+      .filter(Boolean)
       .map(part => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
 
     setIsSubmitting(true);
-    setError(null);
-    setShowGoogleModal(false);
 
     try {
       try {
         await register({
-          name: formattedName || 'Google User',
-          email: targetEmail.trim().toLowerCase(),
+          name: formattedName || 'User',
+          email: cleanEmail,
           password: 'GoogleOAuth2026Password!'
         });
       } catch {
-        // Already registered, proceed to login
         await login({
-          email: targetEmail.trim().toLowerCase(),
+          email: cleanEmail,
           password: 'GoogleOAuth2026Password!'
         });
       }
+      setShowGoogleModal(false);
     } catch (err: any) {
-      setError(err.message || 'Google sign-in failed. Please try again.');
+      setGoogleError(err.message || 'Google authentication failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -103,15 +106,9 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
               </span>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={onContinueAsGuest}
-            className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5"
-          >
-            <span>Continue as Guest</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="text-xs text-slate-500 font-medium">
+            Account Required to Access Workspace
+          </div>
         </div>
       </header>
 
@@ -129,7 +126,7 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
           </h1>
 
           <p className="text-base text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-            Create an ATS-friendly resume from scratch with live preview, real-time action-verb suggestions, and instant job-description match scoring.
+            Create your ATS-friendly resume from scratch with live preview, real-time action-verb suggestions, and instant job-description match scoring.
           </p>
 
           {/* Key Feature Pillars */}
@@ -192,11 +189,11 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
 
           <div className="mb-4">
             <h2 className="text-lg font-bold text-slate-900">
-              {mode === 'register' ? 'Get Started in 10 Seconds' : 'Welcome Back'}
+              {mode === 'register' ? 'Create Your Account' : 'Welcome Back'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               {mode === 'register'
-                ? 'Create your profile to start typing your resume from scratch.'
+                ? 'Sign up to start typing your resume from scratch.'
                 : 'Sign in to access your saved resumes and version history.'}
             </p>
           </div>
@@ -211,7 +208,10 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
           {/* Social Sign-in Button (Google) */}
           <button
             type="button"
-            onClick={() => setShowGoogleModal(true)}
+            onClick={() => {
+              setGoogleError(null);
+              setShowGoogleModal(true);
+            }}
             className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 shadow-2xs flex items-center justify-center gap-3 transition mb-4"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -256,7 +256,7 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Atharva Kale"
+                    placeholder="Enter your full name"
                     className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 shadow-2xs transition"
                   />
                 </div>
@@ -300,26 +300,20 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition shadow-xs mt-2"
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition shadow-xs mt-2 flex items-center justify-center gap-2"
             >
-              {isSubmitting
-                ? 'Processing...'
-                : mode === 'register'
-                ? 'Create Account & Start Building'
-                : 'Sign In to Workspace'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : mode === 'register' ? (
+                'Create Account & Start Building'
+              ) : (
+                'Sign In to Workspace'
+              )}
             </button>
           </form>
-
-          {/* Continue as guest */}
-          <div className="mt-5 text-center pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onContinueAsGuest}
-              className="text-xs text-slate-500 hover:text-slate-800 font-medium transition hover:underline"
-            >
-              Or preview builder as guest (without saving) &rarr;
-            </button>
-          </div>
         </div>
       </main>
 
@@ -330,7 +324,7 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
 
       {/* Google Authentication Dialog Modal */}
       {showGoogleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-sm w-full p-6 text-center relative animate-scaleIn">
             <button
               type="button"
@@ -340,8 +334,8 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
               ✕
             </button>
 
-            <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-3 shadow-2xs">
+              <svg className="w-6 h-6" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -362,58 +356,73 @@ export const WelcomeAuthPage: React.FC<WelcomeAuthPageProps> = ({ onContinueAsGu
             </div>
 
             <h3 className="text-base font-bold text-slate-900 mb-1">Sign in with Google</h3>
-            <p className="text-xs text-slate-500 mb-4">Choose an account to continue to ATS Resume Studio</p>
+            <p className="text-xs text-slate-500 mb-4">Enter your Google email to sign in or register automatically</p>
 
-            <div className="space-y-2 mb-4 text-left">
-              {/* Quick Demo Google Account */}
-              <button
-                type="button"
-                onClick={() => handleGoogleAuthProceed('atharva.engineer@gmail.com')}
-                className="w-full p-2.5 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40 flex items-center gap-3 transition text-left"
-              >
-                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs">
-                  A
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-slate-900 truncate">Atharva (Developer)</p>
-                  <p className="text-[11px] text-slate-500 truncate">atharva.engineer@gmail.com</p>
-                </div>
-              </button>
+            {googleError && (
+              <div className="p-2.5 mb-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 text-left flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{googleError}</span>
+              </div>
+            )}
 
-              <div className="pt-2">
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                  Or enter your own Google account:
+            <form onSubmit={handleGoogleSubmit} className="space-y-3 text-left">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Google Email Address <span className="text-indigo-600">*</span>
                 </label>
-                <div className="flex gap-1.5">
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="email"
-                    value={googleCustomEmail}
-                    onChange={(e) => setGoogleCustomEmail(e.target.value)}
-                    placeholder="name@gmail.com"
-                    className="flex-1 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-100"
+                    required
+                    value={googleEmail}
+                    onChange={(e) => setGoogleEmail(e.target.value)}
+                    placeholder="yourname@gmail.com"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 shadow-2xs"
+                    autoFocus
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (googleCustomEmail.includes('@')) {
-                        handleGoogleAuthProceed(googleCustomEmail);
-                      }
-                    }}
-                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition"
-                  >
-                    Go
-                  </button>
                 </div>
               </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={() => setShowGoogleModal(false)}
-              className="text-xs text-slate-400 hover:text-slate-600 transition"
-            >
-              Cancel
-            </button>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Your Full Name <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <div className="relative">
+                  <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    value={googleName}
+                    onChange={(e) => setGoogleName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition shadow-xs mt-2 flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  'Sign In with Google'
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowGoogleModal(false)}
+                className="w-full py-2 text-xs text-slate-500 hover:text-slate-800 font-medium transition"
+              >
+                Cancel
+              </button>
+            </form>
           </div>
         </div>
       )}

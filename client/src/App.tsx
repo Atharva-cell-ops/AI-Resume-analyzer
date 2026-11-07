@@ -5,35 +5,18 @@ import { ResumeBuilderPage } from './pages/ResumeBuilderPage';
 import { AtsAnalyzerPage } from './pages/AtsAnalyzerPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { WelcomeAuthPage } from './pages/WelcomeAuthPage';
-import { AuthModal } from './components/auth/AuthModal';
 import {
   FileText,
   LogOut,
-  LogIn,
-  UserPlus,
   Gauge,
   Edit3,
   LayoutDashboard,
-  Loader2,
-  ArrowLeft
+  Loader2
 } from 'lucide-react';
 
 export const AppContent: React.FC = () => {
   const { user, isLoading, logout } = useAuth();
   const [activeView, setActiveView] = useState<'builder' | 'analyzer' | 'dashboard'>('builder');
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [guestMode, setGuestMode] = useState(false);
-
-  const openAuth = (mode: 'login' | 'register') => {
-    setAuthMode(mode);
-    setIsAuthModalOpen(true);
-  };
-
-  const handleLogout = async () => {
-    setGuestMode(false);
-    await logout();
-  };
 
   // If initial auth token verification is active, render a clean loading spinner
   if (isLoading) {
@@ -47,13 +30,9 @@ export const AppContent: React.FC = () => {
     );
   }
 
-  // When not logged in and not in guest mode, show the Welcome / Sign In / Register landing page first
-  if (!user && !guestMode) {
-    return (
-      <WelcomeAuthPage
-        onContinueAsGuest={() => setGuestMode(true)}
-      />
-    );
+  // Strictly enforce user authentication: users MUST log in or register before accessing the workspace
+  if (!user) {
+    return <WelcomeAuthPage />;
   }
 
   return (
@@ -120,52 +99,20 @@ export const AppContent: React.FC = () => {
             </nav>
           </div>
 
-          {/* User & Auth Navigation */}
+          {/* User & Logout Navigation */}
           <div className="flex items-center gap-3">
-            {user ? (
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-600 hidden sm:inline">
-                  Signed in as <strong className="text-slate-900 font-semibold">{user.name}</strong>
-                </span>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-medium shadow-xs transition"
-                  title="Logout"
-                >
-                  <LogOut className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md hidden sm:inline">
-                  Guest Preview
-                </span>
-                <button
-                  type="button"
-                  onClick={() => openAuth('login')}
-                  className="flex items-center gap-1 px-3 py-1.5 text-slate-600 hover:text-slate-900 rounded-lg text-xs font-semibold transition"
-                >
-                  <LogIn className="w-3.5 h-3.5" /> Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openAuth('register')}
-                  className="flex items-center gap-1 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition"
-                >
-                  <UserPlus className="w-3.5 h-3.5" /> Register
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGuestMode(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-700 transition rounded-lg hover:bg-slate-100"
-                  title="Return to Welcome Screen"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+            <span className="text-xs text-slate-600 hidden sm:inline">
+              Signed in as <strong className="text-slate-900 font-semibold">{user.name}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={logout}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-medium shadow-xs transition"
+              title="Logout"
+            >
+              <LogOut className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </div>
       </header>
@@ -181,13 +128,6 @@ export const AppContent: React.FC = () => {
           />
         )}
       </main>
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        defaultMode={authMode}
-      />
     </div>
   );
 };
