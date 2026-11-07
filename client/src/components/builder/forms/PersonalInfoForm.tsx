@@ -32,7 +32,7 @@ export const PersonalInfoForm: React.FC = () => {
               name="fullName"
               value={personalInfo.fullName}
               onChange={handleChange}
-              placeholder="e.g. Alex Morgan"
+              placeholder="e.g. John Doe"
               className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition shadow-xs"
               required
             />
@@ -49,7 +49,7 @@ export const PersonalInfoForm: React.FC = () => {
               name="email"
               value={personalInfo.email}
               onChange={handleChange}
-              placeholder="alex.morgan@example.com"
+              placeholder="e.g. john.doe@example.com"
               className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition shadow-xs"
               required
             />
@@ -66,7 +66,7 @@ export const PersonalInfoForm: React.FC = () => {
               name="phone"
               value={personalInfo.phone}
               onChange={handleChange}
-              placeholder="+1 (555) 019-2834"
+              placeholder="+1 (555) 123-4567"
               className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition shadow-xs"
               required
             />
@@ -83,7 +83,7 @@ export const PersonalInfoForm: React.FC = () => {
               name="location"
               value={personalInfo.location}
               onChange={handleChange}
-              placeholder="San Francisco, CA"
+              placeholder="e.g. New York, NY / Mumbai, India"
               className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition shadow-xs"
               required
             />

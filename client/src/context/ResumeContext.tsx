@@ -13,7 +13,31 @@ import {
 import { apiFetch } from '../services/api';
 import { useAuth } from './AuthContext';
 
-export const INITIAL_RESUME_DATA: ResumeData = {
+export const BLANK_RESUME_DATA: ResumeData = {
+  personalInfo: {
+    fullName: '',
+    email: '',
+    phone: '',
+    location: '',
+    linkedin: '',
+    github: '',
+    website: ''
+  },
+  summary: '',
+  education: [],
+  experience: [],
+  projects: [],
+  skills: [
+    {
+      category: 'Technical Skills',
+      items: []
+    }
+  ],
+  certifications: [],
+  achievements: []
+};
+
+export const SAMPLE_RESUME_DATA: ResumeData = {
   personalInfo: {
     fullName: 'Alex Morgan',
     email: 'alex.morgan@example.com',
@@ -111,6 +135,8 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   ]
 };
 
+export const INITIAL_RESUME_DATA: ResumeData = BLANK_RESUME_DATA;
+
 interface ResumeContextType {
   resumeData: ResumeData;
   activeResumeId: string | null;
@@ -169,6 +195,8 @@ interface ResumeContextType {
   loadResume: (id: string) => Promise<void>;
   saveResume: () => Promise<void>;
   resetToTemplate: () => void;
+  clearAllData: () => void;
+  loadSampleData: () => void;
 }
 
 const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
@@ -181,15 +209,49 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [currentStep, setCurrentStep] = useState(0);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
 
-  // Load initial state from localStorage draft if available
+  // Load initial state from localStorage draft if available (discarding old mock data)
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
     try {
       const saved = localStorage.getItem('resuglow_resume_draft');
-      return saved ? JSON.parse(saved) : INITIAL_RESUME_DATA;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.personalInfo?.fullName === 'Alex Morgan') {
+          localStorage.removeItem('resuglow_resume_draft');
+          return BLANK_RESUME_DATA;
+        }
+        return parsed;
+      }
+      return BLANK_RESUME_DATA;
     } catch {
-      return INITIAL_RESUME_DATA;
+      return BLANK_RESUME_DATA;
     }
   });
+
+  // Auto-fill logged-in user's name and email if personalInfo fields are currently blank
+  useEffect(() => {
+    if (user) {
+      setResumeData(prev => {
+        const currentName = prev.personalInfo.fullName.trim();
+        const currentEmail = prev.personalInfo.email.trim();
+        const isDefaultMock = currentName === 'Alex Morgan' || currentEmail === 'alex.morgan@example.com';
+        
+        const shouldSetName = !currentName || isDefaultMock;
+        const shouldSetEmail = !currentEmail || isDefaultMock;
+
+        if (shouldSetName || shouldSetEmail) {
+          return {
+            ...prev,
+            personalInfo: {
+              ...prev.personalInfo,
+              fullName: shouldSetName ? user.name : prev.personalInfo.fullName,
+              email: shouldSetEmail ? user.email : prev.personalInfo.email
+            }
+          };
+        }
+        return prev;
+      });
+    }
+  }, [user]);
 
   // Local storage draft sync & debounced autosave
   useEffect(() => {
@@ -543,7 +605,23 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const resetToTemplate = () => {
-    setResumeData(INITIAL_RESUME_DATA);
+    setResumeData(BLANK_RESUME_DATA);
+  };
+
+  const clearAllData = () => {
+    localStorage.removeItem('resuglow_resume_draft');
+    setResumeData({
+      ...BLANK_RESUME_DATA,
+      personalInfo: {
+        ...BLANK_RESUME_DATA.personalInfo,
+        fullName: user?.name || '',
+        email: user?.email || ''
+      }
+    });
+  };
+
+  const loadSampleData = () => {
+    setResumeData(SAMPLE_RESUME_DATA);
   };
 
   return (
@@ -591,7 +669,9 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         removeAchievement,
         loadResume,
         saveResume,
-        resetToTemplate
+        resetToTemplate,
+        clearAllData,
+        loadSampleData
       }}
     >
       {children}

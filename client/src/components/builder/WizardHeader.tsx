@@ -10,9 +10,10 @@ import {
   Award,
   Trophy,
   Check,
-  CloudCheck,
   CloudUpload,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  Sparkles
 } from 'lucide-react';
 
 export const WIZARD_STEPS = [
@@ -27,7 +28,7 @@ export const WIZARD_STEPS = [
 ];
 
 export const WizardHeader: React.FC = () => {
-  const { currentStep, setCurrentStep, saveStatus, resumeTitle, setResumeTitle } = useResume();
+  const { currentStep, setCurrentStep, saveStatus, resumeTitle, setResumeTitle, clearAllData, loadSampleData } = useResume();
 
   const progressPercent = Math.round(((currentStep + 1) / WIZARD_STEPS.length) * 100);
 
@@ -45,8 +46,37 @@ export const WizardHeader: React.FC = () => {
           />
         </div>
 
-        {/* Autosave Status Badge */}
+        {/* Quick Actions & Autosave Status */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('Clear all resume fields to a blank canvas?')) {
+                clearAllData();
+              }
+            }}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 border border-slate-200/80 hover:border-rose-200 px-2.5 py-1 rounded-lg transition"
+            title="Clear all fields"
+          >
+            <Trash2 className="w-3 h-3" />
+            <span className="hidden sm:inline">Clear Blank</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('Load sample professional data into the builder?')) {
+                loadSampleData();
+              }
+            }}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-lg transition"
+            title="Load sample demo data"
+          >
+            <Sparkles className="w-3 h-3 text-indigo-600" />
+            <span className="hidden sm:inline">Load Sample</span>
+          </button>
+
+          {/* Autosave Status Badge */}
           {saveStatus === 'saving' && (
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full animate-pulse">
               <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving draft...
