@@ -11,9 +11,9 @@ services:
       - key: PORT
         value: 5000
       - key: DATABASE_URL
-        sync: false
+        value: postgresql://neondb_owner:npg_0Pel7fWUTBSK@ep-fancy-morning-be1ymzib-pooler.c-9.us-east-2.aws.neon.tech/neondb?sslmode=require
       - key: CLIENT_URL
-        sync: false
+        value: https://ai-resume-analyzer-smart-pa-ck-ai.vercel.app
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET

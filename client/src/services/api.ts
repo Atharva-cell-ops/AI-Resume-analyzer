@@ -1,9 +1,13 @@
 import { ApiResponse } from '@ai-resume/shared';
 
-// Support production VITE_API_URL or fall back directly to production Render backend
-const rawApiUrl =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? 'https://ai-resume-analyzer-lvyu.onrender.com' : '');
+// Production Render Backend URL fallback
+const PROD_BACKEND_URL = 'https://ai-resume-analyzer-lvyu.onrender.com';
+const isRemoteHost =
+  typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1';
+
+const rawApiUrl = import.meta.env.VITE_API_URL || (isRemoteHost ? PROD_BACKEND_URL : '');
 export const API_BASE = (rawApiUrl ? rawApiUrl.replace(/\/+$/, '') : '') + '/api';
 
 export function getStoredToken(): string | null {
