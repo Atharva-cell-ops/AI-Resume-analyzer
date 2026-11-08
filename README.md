@@ -1,5 +1,7 @@
 # ATS Resume Studio — Full-Stack ATS Resume Builder & Analyzer
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-success?style=for-the-badge&logo=vercel)](https://ai-resume-analyzer-smart-pa-ck-ai.vercel.app)
+[![Backend Status](https://img.shields.io/badge/Backend%20API-Render-46E3B7?style=for-the-badge&logo=render)](https://ai-resume-analyzer-lvyu.onrender.com/api/health)
 [![CI Pipeline](https://github.com/Atharva-cell-ops/AI-Resume-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharva-cell-ops/AI-Resume-analyzer/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev/)
@@ -8,6 +10,9 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791.svg)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+> 🚀 **Live Application URL**: [https://ai-resume-analyzer-smart-pa-ck-ai.vercel.app](https://ai-resume-analyzer-smart-pa-ck-ai.vercel.app)  
+> ⚡ **Live Backend API**: [https://ai-resume-analyzer-lvyu.onrender.com](https://ai-resume-analyzer-lvyu.onrender.com)  
+> 
 > A production-grade, full-stack web application that empowers job seekers to **build ATS-safe resumes** and **maximize their ATS match score** with an explainable, 100% deterministic NLP scoring engine.
 
 ---
@@ -272,6 +277,12 @@ Access the application at `http://localhost`.
 
 ## ☁️ Production Cloud Deployment
 
+### 🌐 Live Environments
+- **Frontend App (Vercel)**: [https://ai-resume-analyzer-smart-pa-ck-ai.vercel.app](https://ai-resume-analyzer-smart-pa-ck-ai.vercel.app)
+- **Backend API (Render)**: [https://ai-resume-analyzer-lvyu.onrender.com](https://ai-resume-analyzer-lvyu.onrender.com)
+- **Database**: Serverless PostgreSQL via [Neon](https://neon.tech)
+- **Authentication**: Official Google Identity Services OAuth 2.0 + secure JWT HttpOnly cookies
+
 ### 1. Database (Neon or Supabase)
 1. Create a PostgreSQL project on [Neon](https://neon.tech) or [Supabase](https://supabase.com).
 2. Copy the pooled connection string into your environment variables as `DATABASE_URL`.
@@ -280,17 +291,20 @@ Access the application at `http://localhost`.
 ### 2. Backend (Render)
 1. Create a Web Service connected to your repository.
 2. Select runtime `Node`.
-3. Set **Build Command**: `npm ci && npm run db:generate --workspace=server && npm run build --workspace=shared && npm run build --workspace=server`
-4. Set **Start Command**: `npm run db:push --workspace=server && node server/dist/index.js`
-5. Configure environment variables (`DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CLIENT_URL`).
-*(Alternatively, deploy via the included `render.yaml` blueprint).*
+3. Set **Build Command**: `npm ci --include=dev && npx puppeteer browsers install chrome && npm run db:generate --workspace=server && npm run build --workspace=shared && npm run build --workspace=server`
+4. Set **Start Command**: `node server/dist/index.js`
+5. Configure environment variables (`DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CLIENT_URL`, `PUPPETEER_CACHE_DIR: /opt/render/.cache/puppeteer`).
+*(Alternatively, deploy automatically via the included `render.yaml` blueprint).*
 
 ### 3. Frontend (Vercel)
 1. Import repository to [Vercel](https://vercel.com).
 2. Set **Root Directory** to `./` (or `client`).
 3. Set **Build Command**: `npm run build --workspace=shared && npm run build --workspace=client`
 4. Set **Output Directory**: `client/dist`
-5. Vercel automatically respects the included `vercel.json` for SPA rewrites and API proxies.
+5. Environment Variables:
+   - `VITE_API_URL`: `https://ai-resume-analyzer-lvyu.onrender.com`
+   - `VITE_GOOGLE_CLIENT_ID`: `1015016366592-aba8gm5719m5s3hkvnsbofq1oe366e3o.apps.googleusercontent.com`
+6. Vercel automatically respects the included `vercel.json` for SPA rewrites.
 
 ---
 
