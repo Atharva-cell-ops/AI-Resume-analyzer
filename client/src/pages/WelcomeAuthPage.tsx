@@ -12,7 +12,9 @@ import {
   Loader2
 } from 'lucide-react';
 
-const GOOGLE_CLIENT_ID = '1015016366592-aba8gm5719m5s3hkvnsbofq1oe366e3o.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  '1015016366592-aba8gm5719m5s3hkvnsbofq1oe366e3o.apps.googleusercontent.com';
 
 export const WelcomeAuthPage: React.FC = () => {
   const { login, register, loginWithGoogle } = useAuth();
