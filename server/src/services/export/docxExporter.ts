@@ -10,7 +10,14 @@ import {
 import { ResumeData, TemplateId } from '@ai-resume/shared';
 
 export async function exportResumeToDocx(data: ResumeData, _templateId: TemplateId = 'ats-classic'): Promise<Buffer> {
-  const { personalInfo, summary, experience, education, projects, skills, certifications, achievements } = data;
+  const personalInfo = data.personalInfo || { fullName: '' };
+  const summary = data.summary || '';
+  const experience = data.experience || [];
+  const education = data.education || [];
+  const projects = data.projects || [];
+  const skills = data.skills || [];
+  const certifications = data.certifications || [];
+  const achievements = data.achievements || [];
 
   const children: Paragraph[] = [];
 

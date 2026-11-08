@@ -27,6 +27,63 @@ export const LivePreview: React.FC = () => {
     { id: 'ats-minimal', label: 'Minimal ATS', desc: 'Max density, 1-page fit' }
   ];
 
+  const triggerBrowserPrintPdf = () => {
+    const canvasElement = document.getElementById('resume-document-canvas');
+    if (!canvasElement) {
+      window.print();
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const candidateName = resumeData.personalInfo.fullName?.trim() || 'Resume';
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${candidateName} — ATS Resume</title>
+          <style>
+            @page {
+              size: A4;
+              margin: 12mm 15mm;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+              color: #111827;
+              font-family: ${templateId === 'ats-classic' ? 'Georgia, serif' : 'system-ui, -apple-system, sans-serif'};
+            }
+            *, *:before, *:after { box-sizing: border-box; }
+            @media print {
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+          </style>
+          ${Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+            .map(el => el.outerHTML)
+            .join('\n')}
+        </head>
+        <body style="padding: 12mm 15mm;">
+          ${canvasElement.innerHTML}
+          <script>
+            window.onload = function() {
+              window.focus();
+              window.print();
+              setTimeout(function() { window.close(); }, 1200);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const handleDownload = async (format: 'pdf' | 'docx') => {
     try {
       if (format === 'pdf') setIsExportingPdf(true);
@@ -52,6 +109,14 @@ export const LivePreview: React.FC = () => {
       });
 
       if (!response.ok) {
+        if (format === 'pdf') {
+          // Fall back gracefully to high-fidelity native print-to-PDF
+          console.warn('Server PDF engine unavailable. Triggering native browser print-to-PDF.');
+          triggerBrowserPrintPdf();
+          setExportSuccess('Opened Print to PDF Dialog');
+          setTimeout(() => setExportSuccess(null), 4000);
+          return;
+        }
         throw new Error(`Export failed with status ${response.status}`);
       }
 
@@ -73,7 +138,13 @@ export const LivePreview: React.FC = () => {
       setTimeout(() => setExportSuccess(null), 3000);
     } catch (error) {
       console.error(`Failed to export ${format}:`, error);
-      alert(`Export failed. Please check backend server.`);
+      if (format === 'pdf') {
+        triggerBrowserPrintPdf();
+        setExportSuccess('Opened Print to PDF Dialog');
+        setTimeout(() => setExportSuccess(null), 4000);
+      } else {
+        alert(`Failed to export ${format.toUpperCase()}. Please check your connection.`);
+      }
     } finally {
       setIsExportingPdf(false);
       setIsExportingDocx(false);
@@ -170,12 +241,13 @@ export const LivePreview: React.FC = () => {
       {/* Live Canvas Viewport */}
       <div className="flex-1 overflow-auto p-4 sm:p-6 bg-slate-100/90 flex justify-center items-start">
         <div
+          id="resume-document-canvas"
           style={{
             transform: `scale(${zoom / 100})`,
             transformOrigin: 'top center',
             transition: 'transform 0.15s ease-out'
           }}
-          className="shadow-md border border-slate-200/80 rounded-sm overflow-hidden"
+          className="shadow-md border border-slate-200/80 rounded-sm overflow-hidden bg-white"
         >
           <ResumeRenderer data={resumeData} templateId={templateId} />
         </div>
